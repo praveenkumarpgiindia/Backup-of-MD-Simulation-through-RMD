@@ -1,0 +1,322 @@
+---
+title: "MD GROMACS RMarkdown"
+author: "Dr Praveen Kumar-M"
+date: "09/10/2020"
+output: html_document
+---
+
+#Notes for Git
+git rm . -r  --cached for removing the cache from staging
+
+
+```{bash}
+<!-- gmx pdb2gmx -h -->
+
+```
+
+```{bash}
+gmx pdb2gmx -f 6LU7_clean.pdb -o 6LU7_processed.gro
+    
+```
+
+```{bash}
+gmx editconf -h
+
+```
+ 
+```{bash}
+gmx
+```
+ 
+ 
+```{bash}
+gmx editconf -f fda130_fix.pdb -o lig.gro
+
+```
+
+```{bash}
+gedit 6LU7_processed.gro lig.gro 
+
+```
+
+```{bash}
+chimera 6LU7_processed.gro 
+
+```
+ 
+```{bash}
+gedit topol.top
+
+```
+ 
+ 
+ 
+```{bash}
+gedit fda130_fix.itp 
+
+```
+ 
+```{bash}
+gmx editconf -f 6LU7_processed.gro -o newbox.gro -bt dodecahedron -d 1.0
+
+```
+ 
+ 
+```{bash}
+gmx solvate -h
+
+```
+ 
+```{bash}
+gmx solvate -cp newbox.gro -cs spc216.gro -p topol.top -o solv.gro
+
+```
+ 
+```{bash}
+vmd solv.gro
+
+```
+ 
+```{bash}
+gmx editconf -f 6LU7_processed.gro -o newbox.gro -bt triclinic -d 1.0
+ 
+```
+ 
+```{bash}
+gmx solvate -cp newbox.gro -cs spc216.gro -p topol.top -o solv.gro
+ 
+```
+ 
+```{bash}
+vmd solv.gro
+ 
+```
+ 
+```{bash}
+gedit topol.top
+
+```
+ 
+```{bash}
+vmd solv.gro
+
+```
+ 
+```{bash}
+gedit topol.top
+
+```
+ 
+```{bash}
+chimera 6LU7_processed.gro 
+
+```
+
+```{bash}
+gmx editconf -f 6LU7_processed.gro -o newbox.gro -bt triclinic -d 1.0
+
+```
+
+```{bash}
+gmx solvate -cp newbox.gro -cs spc216.gro -p topol.top -o solv.gro
+
+```
+
+```{bash}
+vmd solv.gro
+
+```
+
+```{bash}
+gedit topol.top 
+
+```
+
+```{bash}
+gmx grompp -h
+
+```
+
+```{bash}
+gmx grompp -f ions.mdp -c solv.gro -p topol.top -o ions.tpr
+
+```
+
+```{bash}
+gmx genion -h
+
+```
+
+```{bash}
+gmx genion -s ions.tpr -o solv_ions.gro -p topol.top -pname NA -nname CL -neutral
+
+```
+
+```{bash}
+gmx grompp -f em.mdp -c solv_ions.gro -p topol.top -o em.tpr
+
+```
+
+
+```{bash}
+gmx mdrun -v -deffnm em
+
+```
+
+```{bash}
+gmx make_ndx -h
+
+```
+
+```{bash}
+gmx make_ndx -f lig.gro -o index_lig.ndx
+
+```
+
+```{bash}
+gmx genrestr -h
+
+```
+
+```{bash}
+gmx genrestr -f lig.gro -n index_lig.ndx -o posre_lig.itp -fc 1000 1000 1000
+
+```
+
+```{bash}
+gedit topol.top
+
+```
+
+```{bash}
+  ;Ligand position restraints
+  #ifdef POSRES_LIG
+  #include "posre_lig.itp"
+  #endif
+```
+
+```{bash}
+gmx make_ndx -f em.gro -o index.ndx
+
+```
+
+```{bash}
+gmx grompp -f nvt.mdp -c em.gro -r em.gro -p topol.top -n index.ndx -o nvt.tpr
+
+```
+
+```{bash}
+gmx mdrun -deffnm nvt
+
+```
+
+```{bash}
+gmx grompp -f npt.mdp -c nvt.gro -t nvt.cpt -r nvt.gro -p topol.top -n index.ndx -o npt.tpr
+
+```
+
+```{bash}
+gmx mdrun -deffnm npt
+
+```
+
+```{bash}
+gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o md_0_10.tpr
+
+```
+
+```{bash}
+gmx mdrun -deffnm md_0_10
+ 
+```
+
+```{bash}
+vmd md_0_10.gro md_0_10.xtc
+
+```
+
+```{bash}
+gmx trjconv -s md_0_10.tpr -f md_0_10.xtc -o md_0_10_center.xtc -center -pbc mol -ur compact
+
+```
+
+Select group for centering 
+ 
+Group     1 (        Protein) has  1095 elements
+ 
+Select group for output
+ 
+Group     0 (         System) has 14030 elements
+
+```
+
+```{bash}
+gmx trjconv -s md_0_10.tpr -f md_0_10_center.xtc -o start.pdb -dump 0
+
+```
+
+Select group for output
+
+Group     1 (        Protein) has  1095 elements
+
+```
+
+
+```{bash}
+gmx trjconv -s md_0_10.tpr -f md_0_10_center.xtc -o md_0_10_fit.xtc -fit rot+trans
+
+```
+
+Select group for least squares fit
+ 
+Group     4 (       Backbone) has   213 elements
+ 
+Select group for output
+
+
+Group     0 (         System) has 14030 elements
+
+```
+
+```{bash}
+gmx make_ndx -f em.gro -n index.ndx
+
+``` 
+
+Reading structure file
+Going to read 1 old index file(s)
+
+> 13 & ! a H*    
+
+Copied index group 13 'LIG'
+Found 9155 atoms with name H*
+Complemented group: 4875 atoms
+Merged two groups with AND: 48 4875 -> 30
+
+25 LIG_&_!H*           :    30 atoms
+ 
+> name 25 LIG_H
+
+> q
+
+```
+
+
+```{bash}
+gmx rms -s em.tpr -f md_0_10_center.xtc -n index.ndx -tu ns -o rmsd_lig.xvg
+
+```
+
+Select group for least squares fit
+ 
+Group     4 (       Backbone) has   213 elements
+
+Selected 4: 'Backbone'
+Select group for RMSD calculation
+
+Group    25 (          LIG_H) has    30 elements
+
+```{bash}
+xmgrace ~/GMX-2020/Rabies_Confidential/MD_Rank_5_46_52058/ZINC/rmsd_lig.xvg 
+
+```
