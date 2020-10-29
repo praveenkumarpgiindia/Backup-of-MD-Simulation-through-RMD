@@ -102,7 +102,7 @@ Build --> Hydrogen --> add hydrogen
 Selected Molecule in the top ribbon --> selected the file pattern as Sylbyl mol2 --> Entered the file as as ZINC***_H.mol2
 
 #Generation of topology file of ligand in swissparam.ch
-Utilization of http://www.swissparam.ch/submit.php to generate the topology file of ligand
+Utilization of http://www.swissparam.ch to generate the topology file of ligand
 
 ```{bash}
 mv /home/praveenkumarpgiindia/Downloads/ZINC22483429_H.zip /home/praveenkumarpgiindia/GMX-2020/Rabies_Confidential/MD_Rank_6_39_33245
@@ -112,6 +112,7 @@ mv /home/praveenkumarpgiindia/Downloads/ZINC22483429_H.zip /home/praveenkumarpgi
 ```{bash}
 unzip /home/praveenkumarpgiindia/GMX-2020/Rabies_Confidential/MD_Rank_6_39_33245/ZINC22483429_H.zip
 ```
+
 
 #pdb2gmx creation of protein gro
 ```{bash}
@@ -470,7 +471,7 @@ Replacing solvent molecule 3837 (atom 12655) with CL
 
 GROMACS reminds you: "What Kind Of Guru are You, Anyway ?" (F. Zappa)
 
-#grompp
+#grompp - tpr (portable binary run input file)
 ```{bash}
 gmx grompp -f em.mdp -c solv_ions.gro -p topol.top -o em.tpr
 
@@ -945,7 +946,8 @@ GROMACS reminds you: "You Got to Relate to It" (A.E. Torda)
 
 <!-- ``` -->
 
-#make ndx
+#making of new index to generate position restraint topology in subsequent steps
+##Restraintment is basically for non-hydrogen atoms in ligand
 ```{bash}
 gmx make_ndx -f lig.gro -o index_lig.ndx
 
@@ -995,7 +997,7 @@ GROMACS reminds you: "I went to Venice and looked at the paintings of Canaletto 
 
 <!-- ``` -->
 
-#genrestr
+#genrestr - 
 ```{bash}
 gmx genrestr -f lig.gro -n index_lig.ndx -o posre_lig.itp -fc 1000 1000 1000
 
@@ -1020,7 +1022,7 @@ Selected 3: 'System_&_!H*'
 
 GROMACS reminds you: "I Don't Like Dirt" (The Breeders)
 
-#editing of topol.top
+#editing of topol.top for ligand position restraint
 ```{bash}
 gedit topol.top
 
@@ -1032,7 +1034,7 @@ gedit topol.top
 #include "posre_lig.itp"
 #endif
 ```
-#make ndx
+#making of new index of protein-ligand combination
 ```{bash}
 gmx make_ndx -f em.gro -o index.ndx
 
@@ -1263,16 +1265,106 @@ gmx mdrun -deffnm npt
 
 ```
 
+
+GROMACS:      gmx mdrun, version 2020.1
+Executable:   /home/praveenkumarpgiindia/gromacs-2020.1/build/bin/gmx
+Data prefix:  /home/praveenkumarpgiindia/gromacs-2020.1 (source tree)
+Working dir:  /home/praveenkumarpgiindia/GMX-2020/Rabies_Confidential/MD_Rank_6_39_33245
+Command line:
+  gmx mdrun -deffnm npt
+
+Reading file npt.tpr, VERSION 2020.1 (single precision)
+Changing nstlist from 20 to 100, rlist from 1.221 to 1.339
+
+1 GPU selected for this run.
+Mapping of GPU IDs to the 2 GPU tasks in the 1 rank on this node:
+  PP:0,PME:0
+PP tasks will do (non-perturbed) short-ranged interactions on the GPU
+PP task will update and constrain coordinates on the CPUPME tasks will do all aspects on the GPU
+Using 1 MPI thread
+
+Non-default thread affinity set, disabling internal thread affinity
+
+Using 8 OpenMP threads
+
+starting mdrun 'Protein in water'
+500000 steps,   1000.0 ps.
+
+Writing final coordinates.
+
+               Core t (s)   Wall t (s)        (%)
+       Time:    17851.476     2231.435      800.0
+                         37:11
+                 (ns/day)    (hour/ns)
+Performance:       38.720        0.620
+
+GROMACS reminds you: "Highly organized research is guaranteed to produce nothing new." (Frank Herbert)
+
 #grompp - md simulation
 ```{bash}
 gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o md_0_10.tpr
 
 ```
+GROMACS:      gmx grompp, version 2020.1
+Executable:   /home/praveenkumarpgiindia/gromacs-2020.1/build/bin/gmx
+Data prefix:  /home/praveenkumarpgiindia/gromacs-2020.1 (source tree)
+Working dir:  /home/praveenkumarpgiindia/GMX-2020/Rabies_Confidential/MD_Rank_6_39_33245
+Command line:
+  gmx grompp -f md.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o md_0_10.tpr
+
+Ignoring obsolete mdp entry 'title'
+Ignoring obsolete mdp entry 'ns_type'
+Setting the LD random seed to -843725968
+Generated 105474 of the 105570 non-bonded parameter combinations
+Generating 1-4 interactions: fudge = 1
+Generated 71356 of the 105570 1-4 parameter combinations
+Excluding 3 bonded neighbours molecule type 'Protein_chain_G'
+turning H bonds into constraints...
+Excluding 3 bonded neighbours molecule type 'LIG'
+turning H bonds into constraints...
+Excluding 2 bonded neighbours molecule type 'SOL'
+turning H bonds into constraints...
+Excluding 1 bonded neighbours molecule type 'CL'
+turning H bonds into constraints...
+
+NOTE 1 [file topol.top, line 10400]:
+  The bond in molecule-type LIG between atoms 16 O and 17 C has an
+  estimated oscillational period of 1.9e-02 ps, which is less than 10 times
+  the time step of 2.0e-03 ps.
+  Maybe you forgot to change the constraints mdp option.
+
+Number of degrees of freedom in T-Coupling group Protein_LIG is 2863.70
+Number of degrees of freedom in T-Coupling group Water_and_ions is 25743.30
+Determining Verlet buffer for a tolerance of 0.005 kJ/mol/ps at 300 K
+Calculated rlist for 1x1 atom pair-list as 1.294 nm, buffer size 0.094 nm
+Set rlist, assuming 4x4 atom pair-list, to 1.222 nm, buffer size 0.022 nm
+Note that mdrun will redetermine rlist based on the actual pair-list setup
+Reading Coordinates, Velocities and Box size from old trajectory
+Will read whole trajectory
+Last frame         -1 time 1000.000
+Using frame at t = 1000 ps
+Starting time for run is 0 ps
+Calculating fourier grid dimensions for X Y Z
+Using a fourier grid of 36x32x36, spacing 0.146 0.150 0.152
+Estimate for the relative computational load of the PME mesh part: 0.14
+This run will generate roughly 709 Mb of data
+
+There was 1 note
+
+GROMACS reminds you: "I was elected to lead, not to read" (President A. Schwarzenegger)
 
 #mdrun md simulation
 ```{bash}
 gmx mdrun -deffnm md_0_10
  
+```
+
+```{bash}
+tmux new -s mdess_rabies
+control B + C (Creating new window)
+control B + shift 5 (%) (for dividing vertical plane)
+control B + shift ' (") (for dividing horizontal plane) 
+control B + Navigation keys (for movement between panes)
 ```
 
 ```{bash}

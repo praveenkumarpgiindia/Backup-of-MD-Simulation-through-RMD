@@ -1,0 +1,402 @@
+---
+title: "VS_RMarkdown"
+output: html_notebook
+---
+
+
+#Copy folder structure between destination
+
+You could do something like:
+```{bash}
+      
+find . -type d > dirs.txt to create the list of directories, then
+
+xargs mkdir -p < dirs.txt to create the directories on the destination.
+
+```
+
+@Jealie Change the commands to find . -type d -print0 >dirs.txt and xargs -0 mkdir -p <dirs.txt. This will cause both commands to use nulls as separators instead of whitespace. –
+
+
+#Delete files from directory
+
+```{bash}
+while IFS= read -r filename do echo "I am removing the $filename" rm "$filename" done <filenames.txt
+
+while IFS= read -r name; do if [ -e "$name" ]; then printf 'Removing "%s"\n' "$name" rm -f "$name" else printf 'Did not find "%s"\n' "$name" fi done <name.list
+
+xargs -t -I {} rm -f -- {} <name.list
+
+```
+Kusalananda comments while IFS= read -r name; do rm -f "$name" done <name.list
+
+
+Ref: https://unix.stackexchange.com/questions/589506/how-to-delete-some-specific-files-out-of-a-huge-list-of-files/589510#589510
+
+#Divide the files into number of subfolders
+
+```{bash}
+#!/bin/bash x=("/home/praveenkumarpgiindia/idock2020/Ligand Libraries/Ligand1" "/home/praveenkumarpgiindia/idock2020/Ligand Libraries/Ligand2" "/home/praveenkumarpgiindia/idock2020/Ligand Libraries/Ligand3" "/home/praveenkumarpgiindia/idock2020/Ligand Libraries/Ligand4") c=0 for f in * do mv "$f" "${x[c]}" c=$(( (c+1)%4 )) done
+```
+
+
+#For tarring two folders together
+
+```{bash}
+tar -czf Ligands_Master_Backup.gz Ligands_Mol2_Backup/ Ligands_PDBQT_Backup/
+
+```
+
+#Split the big mol2 file to smaller chunk of mol2
+
+##shell methodology
+First add the prefix ni_ to all the big mol2 files
+
+```{bash}
+for i in ni_*.mol2; do obabel $i -O ${i%.mol2}.mol2 -m; done
+
+```
+
+##babel methodology
+
+```{bash}
+babel Maybridge_Screening_collection.sdf -osdf --splitinto 5
+```
+
+
+#Prepare ligand from mol2,pdb pdbqt
+
+```{bash}
+
+for i in *.mol2; do #statements echo "Preparing ligand $i"; prepare_ligand4.py -l $i ; done
+#Separate out pdb files from pdbqt files and move to a separate folder
+
+```
+
+#Finding the pdbqt files and then count the files in the folder matching the argument
+
+```{bash}
+find -name "*.pdbqt" | wc -l
+
+```
+
+
+#Deleting the mol2 files in a pool of pdbqt
+
+After mol2 to pbdqt conversion.
+
+```{bash}
+      
+find -name "*.mol2" -type f -exec rm {} -R ;
+```
+
+#Usage of basename to remove the names
+
+```{bash}
+for file in Ligands_SDF/;b=basename $f;echo $b; done for f in Ligands_SDF/;b=basename $f;echo $b; done for file in Ligands_SDF/;do b=basename $f;do echo $b; done for file in Ligands_SDF/;do b=basename $f echo $b; done for file in Ligands_SDF/*; do babel -i sdf $file -o pdb $file.pdb; done
+
+```
+
+```{bash}
+for i in *.pdb; do mv "$i" /home/praveenkumarpgiindia/idock2020/LP_1505_Formatted_Nitin_Praveen_SDF_Separated_1705/; done
+
+```
+
+
+#Converting of pdb to pdbqt
+
+```{bash}
+obabel *.pdb -opdbqt -m
+
+```
+
+
+
+#How to find a lowest binding energy file after docking and open that in Pymol
+
+
+```{bash}
+find idock2020/COVID19_001/1SSK_NTerminalProtein/1SSK_NTerminalProtein_Part2/Results/ -name "zinc00005849201636*" -type f
+
+find idock2020/COVID19_001/1SSK_NTerminalProtein/1SSK_NTerminalProtein_Part2/Results/ -name "zinc00005849201636*" -type f -exec pymol {} ;
+
+
+```
+
+#idock screening
+```{r}
+
+
+#!/bin/bash #This script will run a virtual screen with iDock mkdir -p Results cd ./Ligands for f in ligand*.pdbqt; do grep -n "Name" $f > $f.txt; done for f in ligand*.txt; do sed -i 1i"$f" $f; done for f in ligand*.txt; do paste -s $f >> ZINC_IDs.txt; done for f in ligand*.txt; do rm $f; done mv ZINC_IDs.txt ../Results/ cd ../ ./idock --config idock.conf cd Results/ awk '{print $1" "$5}' ZINC_IDs.txt | column -t >> id.txt awk -F "","" '{print $1,$3}' log.csv > energy.txt sed -i '1d' energy.txt awk '$1=$1".pdbqt"' energy.txt > energy2.txt sort -n -k1 energy2.txt > energy_sort.txt sort -n -k1 id.txt > id_sort.txt paste energy_sort.txt id_sort.txt > final.txt sort -n -k2 final.txt | column -t > Summary_Final.txt cp Summary_Final.txt ../ rm energy*.txt id*.txt final*.txt for f in *.pdbqt; do cut -c-66 $f > $f.pdb; done for f in .pdb; do mv "$f" "${f%.pdbqt.pdb}_OUTPUT.pdb"; done for f in ligand.pdbqt; do rm $f; done #results
+```
+
+
+#Splitting of the docked results into singular ligand file
+
+```{bash}
+csplit -k -s -n 3 -f manualdocking. manualdocking.pdb '/^ENDMDL/+1' '{7}'
+
+```
+k stands for keep
+
+s stands for silent
+
+n stands for naming of output file
+
+f stands for argument to be passed to the file for naming
+
+and then you give the file name
+
+Then you do a REGEX pattern matching with
+
+'/^ENDMOL/
+
+But REGEX will not include the identified line, so you add +1 to it
+
+This is known as offset
+
+'/^ENDMDL/+1'
+
+
+#Splitting pdb file into smaller chunks
+
+```{bash}
+#!/bin/bash #set number = grep ENDMDL manualdocking.pdb | wc -l #set realnumber = expr $number -2 #echo $number #echo $realnumber csplit -k -s -n 3 -f model manualdocking.pdb '/^ENDMDL/+1' '{'7'}'
+
+for i in model* do mv $i $i.pdb done
+```
+
+
+#Handling with Summary files
+
+
+```{bash}
+find COVID19_001/ -name "Summary*" -type f -exec cp {} NewFolder ;
+
+
+cat Summary_Final_1SSK_NTerminalProtein_Part1.txt Summary_Final_1SSK_NTerminalProtein_Part2.txt Summary_Final_1SSK_NTerminalProtein_Part3.txt Summary_Final_1SSK_NTerminalProtein_Part4.txt > Summary_Final_1SSK_NTerminalProtein_Part_Full.txt
+
+///awk '{print $1,$2}' Summary_Final_1SSK_NTerminalProtein_Part_Full.txt
+
+
+```
+
+
+man awk
+
+NAME
+       mawk - pattern scanning and text processing language
+
+ -f file        Program  text is read from file instead of from the com‐
+                      mand line.  Multiple -f options are allowed.
+
+sort -k 2 -r Summary_Final_1SSK_NTerminalProtein_Part_Full.txt -o Summary_Final_1SSK_NTerminalProtein_Part_Full_Sorted.txt
+
+  sort - sort lines of text files
+
+  -k, --key=KEYDEF
+              sort via a key; KEYDEF gives location and type
+
+  -o, --output=FILE
+              write result to FILE instead of standard output
+  -c, --check, --check=diagnose-first
+              check for sorted input; do not sort
+  -r, --reverse
+              reverse the result of comparisons
+
+find * -name "Sorted" -exec cp {} /home/praveenkumarpgiindia/Desktop/MailtoSonyNitin/ \;
+
+__________________________________________________________________________________________________________________
+
+#Converting from PDBQT to PDB
+
+```{bash}
+cut -c-66 filename.pdbqt > filename.pdb
+```
+
+man cut says
+
+cut - remove sections from each line of files
+
+Print selected parts of lines from each FILE to standard output.
+
+       With no FILE, or when FILE is -, read standard input.
+
+ -c, --characters=LIST
+              select only these characters
+
+ Use one, and only one of -b, -c or -f.  Each LIST is  made  up  of  one
+       range,  or  many ranges separated by commas.  Selected input is written
+       in the same order that it is read, and is written exactly  once.   Each
+       range is one of:
+
+       N      N'th byte, character or field, counted from 1
+
+       N-     from N'th byte, character or field, to end of line
+
+       N-M    from N'th to M'th (included) byte, character or field
+
+       -M     from first to M'th (included) byte, character or field
+
+
+#Splitting a Multi-Model PDB File into Separate PDB Files
+
+```{bash}
+set a=`grep ENDMDL my_docking.pdb | wc -l`
+set b=`expr $a - 2`
+csplit -k -s -n 3 -f my_docking. mydocking.pdb '/^ENDMDL/+1' '{'$b'}'
+foreach f ( mydocking.[0-9][0-9][0-9] )
+  mv $f $f.pdb
+end
+
+```
+
+
+NAME
+       grep, egrep, fgrep, rgrep - print lines that match patterns
+
+SYNOPSIS
+       grep [OPTION...] PATTERNS [FILE...]
+
+NAME
+       wc - print newline, word, and byte counts for each file
+
+Print newline, word, and byte counts for each FILE, and a total line if more than one FILE is specified.  A word is a non-zero-length sequence of characters delimited by white space.
+
+With no FILE, or when FILE is -, read standard input.
+
+	-l, --lines
+	print the newline counts
+
+NAME
+       expr - evaluate expressions
+	
+	ARG1 - ARG2
+        arithmetic difference of ARG1 and ARG2
+
+
+NAME
+       csplit - split a file into sections determined by context lines
+
+
+       -k, --keep-files
+              do not remove output files on errors
+
+      -s, --quiet, --silent
+              do not print counts of output file sizes
+      -n, --digits=DIGITS
+              use specified number of digits instead of 2
+
+       -f, --prefix=PREFIX
+              use PREFIX instead of 'xx'
+
+   Each PATTERN may be:
+       INTEGER
+              copy up to but not including specified line number
+
+       /REGEXP/[OFFSET]
+              copy up to but not including a matching line
+
+       {*}    repeat the previous pattern as many times as possible
+
+Why the above code is not working is explained in this thread
+
+http://autodock.1369657.n2.nabble.com/ADL-Splitting-pdb-files-td2942737.html
+
+Isn't the OSX terminal a BASH environment? I think that foreach loop is
+written for a C shell. You could try this instead - save the following
+
+ 
+
+commands as a text file (call it get-n-split or whatever you like and give
+the file execute permission by running  this command: sudo chmod o+x  
+get-n-split ):
+
+
+```{bash}
+
+-----------------------------
+
+#!/bin/bash
+#get-n-split
+echo "Enter name of docking log (without extension) and press Enter: "
+read logfile
+grep '^DOCKED' $logfile.dlg | cut -c9- > $logfile.docked.pdbqt
+cut -c-66 $logfile.docked.pdbqt > $logfile.docked.pdb
+a=`grep ENDMDL $logfile.docked.pdb | wc -l`
+b=$(($a - 2))
+csplit -k -s -n 3 -f $logfile.docked.
+$logfile.docked.pdb '/^ENDMDL/+1' '{'$b'}'
+for f in $logfile.docked.[0-9][0-9][0-9]
+do
+mv $f $f.pdb
+done
+
+-----------------------------
+
+
+./get-n-split
+
+```
+
+
+
+Put get-n-split in your working directory and execute like so:
+
+
+The script will then ask for the name of the docking log file to process
+(without .dlg extension) and will output a series of pdb files with the
+
+ 
+
+logfile name as the basename. Maybe someone knows how to make csplit start
+numbering at 001 instead of 000?
+
+Regards,
+
+Mark
+
+
+```{bash}
+
+
+shopt -s failglob for f in "$file".docked.[0123456789][0123456789][0123456789] do mv -- "$f" "$f.pdb" done
+
+
+```
+
+
+How to trouble-shoot the csplit issue?
+
+The index of the first file output file is always 0 and there is no option to change the start index.
+
+As a workaround, you could use a process substitution to print your pattern once before your data is output. This way this dummy line is split into file file.docked.000 which you can delete afterwards. Also increase the repeat pattern by one to get the desired number of output files.
+
+
+```{bash}
+csplit -k -s -n 3 -f file.docked. \
+  <(echo "ENDMDL dummy, delete this file"; cat file.docked.pdb) '/^ENDMDL/+1' '{8}' &&
+  rm file.docked.000
+
+```
+__________________________________________________________________________________________________________________
+#Creating a PDB File of the Complex
+
+```{bash}
+cat receptor.pdb my_docking.pdb | grep -v '^END   ' | grep -v '^END$' > complex.pdb
+
+```
+
+
+#Moving the successful files 
+
+```{bash}
+
+while IFS= read -r filename
+do
+	echo "Moving the file named $filename"
+	cp -- "$filename" "/home/praveenkumarpgiindia/idock2020/COVID19_002/Summary/mol2files_Top_3"
+	echo "File Moved!!!"
+	sleep 0.2
+done < mol3files_Top_3.txt
+```

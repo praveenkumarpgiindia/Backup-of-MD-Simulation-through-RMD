@@ -1,0 +1,13 @@
+When you have gzipped files, you also have the powerful Z commands to work on them.
+
+These Z commands provide a ‘Z’ equivalent of the regular file manipulation commands.
+
+So, you get
+
+* ***** for cat to view compressed file
+* ***** for grep to search inside the compressed file
+* ***** for less, zmore for more, to view the file in pages
+* ***** for diff to see the difference between two compressed files
+
+by Abhishek Prakash
+https://itsfoss.com/read-compressed-log-files-linux/

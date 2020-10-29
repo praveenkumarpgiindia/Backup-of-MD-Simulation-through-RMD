@@ -1,0 +1,9 @@
+en,fr
+computer,ordinateur
+device,périphérique
+file,fichier
+folder,dossier
+hard drive,disque dur
+keyboard,clavier
+memory,mémoire
+screen,écran

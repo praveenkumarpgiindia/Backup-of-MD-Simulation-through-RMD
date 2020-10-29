@@ -1,0 +1,230 @@
+---
+title: "Learn Linux in R Markdown_1"
+author: "Dr Praveen Kumar-M"
+date: "18/10/2020"
+output: html_document
+---
+```{bash}
+man tar
+```
+
+
+#Source 1 for reading
+
+##https://www.yesik.it/course/1
+
+
+```{bash}
+tar xzf Yes_I_Know_IT-Ep07.tar.gz
+
+```
+
+      
+              
+      NAME
+       tar - an archiving utility
+      -x, --extract, --get
+              Extract  files  from  an archive.  Arguments are optional.  When
+              given, they specify names of  the  archive  members  to  be  ex‐
+              tracted.
+       -z, --gzip, --gunzip, --ungzip
+              Filter the archive through gzip(1).
+       -f, --file=ARCHIVE
+              Use archive file or device  ARCHIVE.   If  this  option  is  not
+              given,  tar  will first examine the environment variable `TAPE'.
+              If it is set, its value will be used as the archive name.   Oth‐
+              erwise,  tar  will  assume the compiled-in default.  The default
+              value can be inspected either using the --show-defaults  option,
+              or at the end of the tar --help output.
+              
+              
+```{bash}
+ls
+```
+
+```{bash}
+head -5 *
+```
+
+SED is a standard UNIX tool to filter and transform the content of a text file. 
+
+Apply scripted text transformations on an input stream
+(insertions of text, deletions of lines, performing substitutions)
+
+Lets replace the year placeholder with year of the license
+
+```{bash}
+sed -e '
+s/<YEAR>/2020/
+s/<COPYRIGHT HOLDER>/Praveen Kumar-M/
+s/^/# /
+' MIT.LICENSE > LICENSE
+
+sed -i -e '1i# Centaur Towers' -e '$a# ' LICENSE
+#sed -i -e '2i# ' -e '$a# ' LICENSE
+
+sed -i -e '/----/d' LICENSE
+
+sed -i -e '1r LICENSE' *.sh
+
+less *.sh
+```
+
+Please notice I’ve made use of some GNU sed extension in this video. Formally:
+
+The -i option to make changes in-place is not part of POSIX. BSD versions of sed usually require a backup extension after the -i option. Other sed implementations do not have at all the -i option and require you to create a temporary file yourself. As a comparison:
+
+```
+# Delete the last line of a file:
+# GNU sed
+sed -i '$d' some.file
+# BSD sed
+sed -i BAK '$d' some.file
+# POSIX sed
+sed '$d' some.file > some.file.NEW
+mv -f some.file.NEW some.file
+```
+In a strictly POSIX compliant sed, the a and i commands must be terminated by a backslash and the the new text has to be on its own line. On the other hand, GNU sed allows the new text to appear right after the command:
+
+```
+# Insert C-style comments before and after a code snippet:
+# GNU sed
+sed -e '1i/*' -e '$a*/' code.snippet
+# POSIX sed, possibly BSD sed
+sed -e '1i\
+/*' -e '$a\
+*/' code.snippet
+```
+
+#Source 2 for reading
+##https://www.yesik.it/EP08
+```{bash}
+tar -xvf Yes_I_Know_IT-Ep08.tar.gz
+```
+
+Please notice I use extended regular expression in this video (the -E flag you will see in the sed commands used in this video). It shouldn’t be an issue, unless you running an Unix-like system released in the early 80s. And if you are running such an obsolete system, I really want to hear more about you!
+
+Regular expressions
+The video introduces few regular expression patterns to show you how you can leverage them in your sed substitution commands:
+
+\b The word boundary matcher
+
+. (the dot) Any character
+
+\w The "any letter" metacharacter (equivalent to [a-zA-Z0-9_] in the English locale)
+
+[a-z] The range matcher
+
+(…) Capturing groups
+
+(…|…|…) The alternation
+
+\1…\99 Back references
+
+In addition, I use a couple of very common quantifiers — which are used to search for repeating occurrence of the preceding pattern:
+
+…* Repeat the preceding pattern 0 or more times
+
+…+ Repeat the preceding pattern 1 or more times
+
+```{bash}
+cat 1.txt
+
+#<!-- The first appearance of lead is changed as gold -->
+sed -E 's/lead/gold/' 1.txt > 1.out
+cat 1.out
+
+#<!-- The search and replace for glob pattern -->
+sed -E 's/lead/gold/g' 1.txt > 1.out
+
+sed -E 's/\blead\b/gold/g' 1.txt > 1.out
+
+vimdiff 1*
+
+```
+
+```{bash}
+#<!-- Replace every character with * -->
+sed -E 's/./*/g' 2.txt > 2.out
+
+Replace any small letter between backticks
+sed -E 's/[a-z]/*/g' 2.txt > 2.out
+
+Replace any capital letter between backticks
+sed -E 's/[A-Z]/*/g' 2.txt > 2.out
+
+Replace any words between backticks
+sed -E 's/`\w*`/*****/g' 2.txt > 2.out
+
+Any word with *
+sed -E 's/\w/*/g'  2.txt > 2.out
+cat 2.out
+```
+
+
+```{bash}
+cat 3.txt
+
+sed -E 's!(John|Paul|George|Ringo)!<em>&</em>!g' 3.txt > 3.out
+```
+
+Parenthesis within a search string defines what is known as the capturing group, that can referenced by its indexed in the replacement string. 
+
+```{bash}
+head 4.txt
+sed -E 's/(.+),(.+)/\2,\1/' 4.txt > 4.out
+```
+
+```{bash}
+head -20 5.txt
+sed -nE ' 
+s!^http:!&!w 5.http
+s!^https:!&!w 5.https
+' 5.txt
+```
+
+Doing something with backreferences
+
+```{bash}
+sed -E 's/(\b[a-z]+\b) \1/\1/g' 6.txt > 6.out
+```
+
+https://cheatography.com/tme520/cheat-sheets/grep-english/
+i stands for case insensitive search 
+1 look for words'
+#<!-- o only show the matching pattern of string -->
+
+sed -i -e '$'-1r lig_edited.gro' conf.gro
+
+
+sed -e '$ ir lig_edited.gro' conf.gro
+
+```{bash}
+
+grep 'LIG' -i  lig.gro >lig_edited.gro
+
+((head -n-1 conf.gro && cat lig_edited.gro) && tail -n1 conf.gro) >> conf_edited.gro
+
+<!-- wc -l conf_edited.gro -2 -->
+
+<!-- For editing the file name -->
+<!-- count < wc -l < conf_edited.gro -->
+<!--  echo $NUM -->
+ 
+export MY_VARIABLE=`cat conf_edited.gro | wc -l`
+
+<!-- sed -i '2s/.*/`cat conf_edited.gro | wc -l`-3/' conf_edited.gro -->
+
+<!-- sed -i '2s/[0-9]*/int(&+3)/' conf_edited.gro -->
+
+https://unix.stackexchange.com/questions/36949/addition-with-sed
+echo conf_edited.gro
+
+ cat conf_edited.gro | perl -pe '2s/([0-9]+)/($1+3)/e'  
+
+
+ echo 12 | sed 's/[0-9]*/&+3/' | bc
+
+```
+
+
